@@ -1,0 +1,404 @@
+ansible is configuration managment tool and it is agent less architecture no need to install any softwares/agents on target.
+
+Connectivity:
+Ansible connects to target machines with trusted entity ssh protocol
+We have to generate ssh keys(public/private) by using ssh-keygen
+How to connect to target machine from client machine:
+   1. Manually copy public key to authorized keys and enter client user password
+        From client machine we need to copy public key to server authorized_keys file and we need to make sure .ssh/authorized_keys file/directory has proper permission to copy then type user password
+   2. By using ssh-copy-id command and enter client user password
+        eg: ssh-copy-id <username>@hostname/ip
+        ssh-copy-id ansible@ubuntu1
+   3. Use sshpass util to with ssh-copy-id by specifying password from command line. By using StrictHostKeyChecking we can automatically       
+      accepting unknown host key fingerprints
+        sshpass -f password.txt ssh-copy-id StrictHostKeyChecking=no username@hostname
+   
+Ansible adhoc command
+1. ansible -i, ubuntu1 -m ping
+   -i -> Can specify Inventroty file or Host list by coma(,)
+   -m -> specify which module to execute on host list
+
+Ansible Configuration
+Priority of configuration files
+1. ANSIBLE_CONFIG(Environment Variable with target file path)
+2. ./ansible.cfg (A ansible.cfg file in current directory)
+3. /home/user1/.ansible.cfg (A hidden file called .ansible.cfg under users home directory)
+4. /etc/ansible/ansible.cfg (if you install ansible through respective package manager like apt,dnf,yum install ansible)
+
+Ansible Inventories:
+
+1. How to automatically accepting the fingerprint of hosts without prompting for user confirmation ?
+   By using ANSIBLE_HOST_KEY_CHECKING=False we can skip user prompt.
+
+   # ANSIBLE_HOST_KEY_CHECKING=False ansible all -m ping
+2. Instead of giving ANSIBLE_HOST_KEY_CHECKING from command we can keep it in config file(ansible.cfg)
+   cat ansible.cfg
+   [defaults]
+   inventory = hosts
+   host_key_checking = False
+   cat hosts
+   [all]
+   centos1
+   [centos]
+   centos1
+   centos2
+   centos3
+   [ubuntu]
+   ubuntu1
+   ubuntu2
+   ubuntu3
+3. Run adhoc command on specific group
+   # ansible centos -m ping
+   # ansible ubuntu -m ping
+   # ansible all -m ping
+4. Adhoc command with single line output
+   # ansible all -m ping -o
+5. List hosts for a specific group
+   # ansible centos --list-hosts
+   # ansible ubuntu --list-hosts
+   # ansible all --list-hosts
+   # ansible centos1 --list-hosts
+   # ansible ubuntu1 --list-hosts
+6. List hosts which matches pattern '~.*3'
+   Regex:
+     ~ -> Starting
+     . -> single charcter
+     .* -> Any number of characters
+     3 -> Ends with 3
+   ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/03$ ansible '~.*3' --list-hosts
+    hosts (2):
+        centos3
+        ubuntu3
+
+7. Run as root with command module and show id argument value of root user(ansible_user=root).
+
+    Note: By default if you dont specify module name then it will use "command" module.
+        ansible all -a 'id' -o
+
+    ansible_user=root
+    Purpose: Specifies the username Ansible should use to log in to the remote system.
+
+    When to use: This is typically used when you want Ansible to authenticate as a specific user (in this case, root) to perform tasks on the remote machine.
+
+    cat ansible.cfg
+    [defaults]
+    inventory = hosts
+    host_key_checking = False
+    cat hosts
+    [centos]
+    centos1 ansible_user=root
+    centos2 ansible_user=root
+    centos3 ansible_user=root
+    [ubuntu]
+    ubuntu1
+    ubuntu2
+    ubuntu3
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/04$ ansible all -m command -a 'id' -o 
+    ubuntu1 | CHANGED | rc=0 | (stdout) uid=1000(ansible) gid=1000(ansible) groups=1000(ansible),27(sudo)
+    ubuntu2 | CHANGED | rc=0 | (stdout) uid=1000(ansible) gid=1000(ansible) groups=1000(ansible),27(sudo)
+    centos1 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    centos3 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    ubuntu3 | CHANGED | rc=0 | (stdout) uid=1000(ansible) gid=1000(ansible) groups=1000(ansible),27(sudo)
+    centos2 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+
+8. Run as Sudo user(ansible_become)
+
+    ansible_become=true & ansible_become_password=password
+    Purpose: These parameters control privilege escalation during task execution (e.g., using sudo or su).
+
+    ansible_become=true: This tells Ansible to escalate privileges to run commands as another user (typically root).
+    ansible_become_password=password: This provides the password needed for privilege escalation (e.g., when using sudo).
+
+    When to use: This is used when you are logged in as a regular user but need to perform tasks that require root (or another privileged user) access. This is common when you don’t want to log in directly as root, but still need to execute administrative tasks.
+
+    cat hosts
+    [centos]
+    centos1 ansible_user=root
+    centos2 ansible_user=root
+    centos3 ansible_user=root
+    [ubuntu]
+    ubuntu1 ansible_become=true ansible_become_password=password
+    ubuntu2 ansible_become=true ansible_become_password=password
+    ubuntu3 ansible_become=true ansible_become_password=password
+
+    ```   
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/05$ ansible all -a 'id' -o 
+    centos2 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    centos3 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    centos1 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    ubuntu2 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    ubuntu1 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    ubuntu3 | CHANGED | rc=0 | (stdout) uid=0(root) gid=0(root) groups=0(root)
+    ```
+
+9. Run with specific port ansible_port.
+
+    cat hosts
+    [centos]
+    centos1 ansible_user=root ansible_port=2222
+    centos2 ansible_user=root
+    centos3 ansible_user=root
+
+10. Alternate method to specify port without ansible_port
+
+    [centos]
+    centos1:2222 ansible_user=root
+    centos2 ansible_user=root
+    centos3 ansible_user=root
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/07$ ansible all -m ping -o 
+    centos2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    ubuntu1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+
+11. How to include ansible host to inventory by using ansible_connection=local
+    
+    if you include ansible_connection=local then that particular host wont include transport like ssh mechanism
+    [control]
+    ubuntu-c ansible_connection=local
+
+    [centos]
+    centos1 ansible_user=root ansible_port=2222
+    centos2 ansible_user=root
+    centos3 ansible_user=root
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/08$ ansible all -m ping -o 
+    ubuntu-c | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    centos1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    ubuntu2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+
+12. How to combine or group the hosts to use common values with arguments like ansible_port, ansible_user by using ranges
+
+    [control]
+    ubuntu-c ansible_connection=local
+
+    [centos]
+    centos1 ansible_user=root ansible_port=2222
+    centos[2:3] ansible_user=root
+
+    [ubuntu]
+    ubuntu[1:3] ansible_become=true ansible_become_pass=password
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/09$ ansible all -m ping -o
+    ubuntu-c | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    centos2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    ubuntu1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+
+13. Host Vars can be used to have common values of arguments.
+    In step 12 we have root as common user with ansible_user argument
+
+    [control]
+    ubuntu-c ansible_connection=local
+
+    [centos]
+    centos1 ansible_port=2222
+    centos[2:3]
+
+    [centos:vars]
+    ansible_user=root
+
+    [ubuntu]
+    ubuntu[1:3]
+
+    [ubuntu:vars]
+    ansible_become=true
+    ansible_become_pass=password
+
+14. Children Group: from step 13 we see both centos/ubuntu belongs to linux OS then can declare linux as child group which will inherit the 
+    centos/ubuntu groups
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/11$ cat hosts 
+    [control]
+    ubuntu-c ansible_connection=local
+
+    [centos]
+    centos1 ansible_port=2222
+    centos[2:3]
+
+    [centos:vars]
+    ansible_user=root
+
+    [ubuntu]
+    ubuntu[1:3]
+
+    [ubuntu:vars]
+    ansible_become=true
+    ansible_become_pass=password
+
+    [linux:children]
+    centos
+    ubuntu
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/11$ ansible linux -m ping -o
+    centos2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    ubuntu2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+
+15. Host vars (eg:ansible_port) will have the highest priority than group vars/ all vars.
+    To connect local host, if you have host var as ansible_connection then it wont use ssh so port is not requeried to connect in this case.
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/12$ cat hosts 
+    [control]
+    ubuntu-c ansible_connection=local
+
+    [centos]
+    centos1 ansible_port=2222
+    centos[2:3]
+
+    [centos:vars]
+    ansible_user=root
+
+    [ubuntu]
+    ubuntu[1:3]
+
+    [ubuntu:vars]
+    ansible_become=true
+    ansible_become_pass=password
+
+    [linux:children]
+    centos
+    ubuntu
+
+    [all:vars]
+    ansible_port=1234
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/12$ ansible linux -m ping -o
+    centos2 | UNREACHABLE!: Failed to connect to the host via ssh: ssh: connect to host centos2 port 1234: Connection refused
+    centos3 | UNREACHABLE!: Failed to connect to the host via ssh: ssh: connect to host centos3 port 1234: Connection refused
+    ubuntu1 | UNREACHABLE!: Failed to connect to the host via ssh: ssh: connect to host ubuntu1 port 1234: Connection refused
+    ubuntu2 | UNREACHABLE!: Failed to connect to the host via ssh: ssh: connect to host ubuntu2 port 1234: Connection refused
+    ubuntu3 | UNREACHABLE!: Failed to connect to the host via ssh: ssh: connect to host ubuntu3 port 1234: Connection refused
+    centos1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+
+16. Overrite the existing value with -e EXTRA_VARS
+
+    ansible@ubuntu-c:~/diveintoansible/Ansible Architecture and Design/Inventories/16$ ansible all -m ping -e "ansible_port=22" -o
+    centos1 | UNREACHABLE!: Failed to connect to the host via ssh: ssh: connect to host centos1 port 22: Connection refused
+    ubuntu-c | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    centos3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    centos2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.9"},"changed": false,"ping": "pong"}
+    ubuntu1 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu2 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+    ubuntu3 | SUCCESS => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3.10"},"changed": false,"ping": "pong"}
+
+
+Ansible Modules:
+1. Setup:
+    By default setup module will be executed when you run ansible playbook. Setup module get all facts of target hosts.
+    Get all target Ips: ansible all -m setup -a 'filter=ansible_all_ipv4_addresses'
+2. apt:
+    Install packges in debian based os
+    # ansible ubuntu -m apt -a 'name=jq state=present'
+3. file:
+    Creates file in target machines
+    # ansible all -m file -a "path=/tmp/test state=touch"
+    Change the file permissions
+    # ansible all -m file -a "path=/tmp/test state=file mode=600"
+    # ansible all -m file -a "path=~/saikiran state=directory mode=600"
+4. Copy files/directories
+    Copy file from local to remote
+    # ansible all -m copy -a "src=/tmp/hello_world.txt dest=~/hello_world.txt"
+    Copy file from remote to remote
+    # ansible all -m copy -a "remote_src=yes src=/tmp/hello_world.txt dest=/tmp/hello.txt"
+5. Command: In this module only single command, we cannot use "< > | ; &"
+    # ansible all -m command -a "hostname"
+6. Shell
+    # ansible all -m shell -a "cat /etc/hosts | wc -l"
+7. Fetch: To copy file from remote to local
+    # ansible centos1 -m fetch -a "src=/tmp/hello_world.txt dest=~/hello_world.txt"
+
+Ansible Playbooks
+Playbook Syntax
+1. Yaml starts with "---"
+2. - indicates play list
+3. Hosts: Where our play runs and what options it runs with
+4. Vars: variables that will apply to the play, on the target systems
+5. Tasks: the list of tasks that will be executed with in the play, this section will be used to pre/post tasks.
+6. Handlers: the list of handlers that are executed from a task with notify key
+7. Roles: list of roles can be imported into the play
+
+---
+- 
+  hosts:
+  user: root
+  tasks:
+    - name: Display centos motd message
+      copy:
+        src: centos_motd
+        dest: /etc/motd
+---
+-
+  hosts: centos
+  user: root
+  gather_facts: False
+  tasks:
+    - name: Show hostname
+      command:
+        cmd: cat /etc/motd
+      register: motd_output
+    - name: Display
+      debug:
+        msg: "Output is {{ motd_output.stdout }}"
+---
+- 
+  hosts: centos
+  user: root
+  gather_facts: False
+  tasks:
+    - name: Display
+      copy:
+        content: "Hello World!"
+        dest: /etc/motd
+# ansible-playbook sample.yaml -e "motd=Testing playbbok"
+---
+-
+  hosts: centos
+  user: root
+  gather_facts: False
+  tasks:
+    - name: Show hostname
+      command:
+        cmd: cat /etc/motd
+      register: motd_output
+    - name: Display
+      debug:
+        msg: "Output is {{ motd_output.stdout }}"
+# Use facts
+---
+- 
+  hosts: Linux
+  vars:
+    motd_centos: "Welcome to centos"
+    motd_ubuntu: "Welcome to ubuntu"
+  tasks:
+    - name: Display Centos motd
+      copy:
+        content: "{{ motd_centos }}"
+        dest: /etc/motd
+      notify: MOTD changed
+      when: ansible_distribution == "Centos"
+    - name: Display Ubuntu motd
+      copy:
+        content: "{{ motd_ubuntu }}"
+        dest: /etc/motd
+      notify: MOTD changed
+      when: ansible_distribution == "Ubuntu"
+  handlers:
+    - name: MOTD changed
+      debug:
+        msg: "MOTD was changed"
