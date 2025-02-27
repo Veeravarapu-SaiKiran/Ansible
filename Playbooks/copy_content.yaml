@@ -1,0 +1,10 @@
+---
+- 
+  hosts: centos
+  user: root
+  gather_facts: False
+  tasks:
+    - name: Configure motd msg
+      copy:
+        content: Welcome to centos host
+        dest: /etc/motd

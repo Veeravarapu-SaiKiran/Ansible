@@ -1,0 +1,17 @@
+---
+- 
+  hosts: centos1
+  gather_facts: True
+  tasks:
+    - name: test hostvars with ansible fact by dot
+      debug:
+        msg: "{{ hostvars[ansible_hostname].ansible_port | default('22') }}"
+    - name: test hostvars with ansible fact by python braces
+      debug:
+        msg: "{{ hostvars[ansible_hostname]['ansible_port'] | default('22') }}"
+    - name: Test group vars
+      debug:
+        msg: "{{ ansible_user }}"
+    - name: Test extra vars # ansible-playbook demo.yaml -e extra_vars_key="extra value"
+      debug:
+        msg: "{{ extra_vars_key }}"

@@ -1,0 +1,58 @@
+---
+- 
+  hosts: centos1
+  user: root
+  gather_facts: False
+  vars:
+    example_key: example_value
+    dict:
+      dict_key: this is dict value
+    inline_dict:
+      {inline_dict_key: This is an inline dictionary value}
+    named_list:
+      - item1
+      - item2
+      - item3
+      - item4
+    inline_named_list:
+      [ item1, item2, item3, item4 ]
+  tasks:
+    - name: test dictionary key value
+      debug:
+        msg: example_key
+    - name: test named dictionary dictionary
+      debug:
+        msg: "{{ dict }}"
+    - name: test named dictionary dictionary key value with dot 
+      debug:
+        msg: "{{ dict.dict_key }}"
+    - name: test named dictionary dictionary key value with python single braces
+      debug:
+        msg: "{{ dict['dict_key'] }}"      
+    - name: test named inline dictionary dictionary
+      debug:
+        msg: "{{ inline_dict }}"
+    - name: test named inline dictionary dictionary key value with dot 
+      debug:
+        msg: "{{ inline_dict.inline_dict_key }}"
+    - name: test named inline dictionary dictionary key value with python single braces
+      debug:
+        msg: "{{ inline_dict['inline_dict_key'] }}"
+    - name: test named_list
+      debug:
+        msg: "{{ named_list }}"
+    - name: test named_list first element with dot
+      debug:
+        msg: "{{ named_list.0 }}"
+    - name: test named_list first element with python braces
+      debug:
+        msg: "{{ named_list[0] }}" 
+    - name: test inline_named_list
+      debug:
+        msg: "{{ inline_named_list }}"
+    - name: test inline_named_list first element with dot
+      debug:
+        msg: "{{ inline_named_list.0 }}"
+    - name: test inline_named_list first element with python braces
+      debug:
+        msg: "{{ inline_named_list[0] }}"

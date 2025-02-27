@@ -1,0 +1,14 @@
+---
+-
+  hosts: centos
+  user: root
+  tasks:
+    - name: Configure motd msg
+      copy:
+        src: centos_motd
+        dest: /etc/motd
+
+# centos_motd
+
+Welcome to centos Linux
+

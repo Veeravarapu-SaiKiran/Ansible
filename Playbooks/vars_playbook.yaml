@@ -1,0 +1,14 @@
+---
+- 
+  hosts: centos
+  user: root
+  gather_facts: False
+  vars:
+    motd: "Welcome to Centos Linux\n"
+  tasks:
+    - name: Configure motd msg with vars
+      copy:
+        content: "{{ motd }}"
+        dest: /etc/motd
+# pass vars through command line as well with -e or --extra-vars
+# ansible-playbook motd_playbook.yaml -e 'motd="Welcome centos 7 Linux\n"'

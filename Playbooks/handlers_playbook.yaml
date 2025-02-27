@@ -1,0 +1,18 @@
+---
+- 
+  hosts: centos
+  user: root
+  gather_facts: False
+  vars:
+    motd: "Welcome centos7 \n"
+  tasks:
+    - name: task to configure motdfile
+      copy:
+        content: "{{ motd }}"
+        dest: /etc/motd
+      notify: MOTD changed
+  handlers: ## Handlers will be excuted once tasks completed if anything changed in due to tasks.
+    - name: MOTD changed
+      debug:
+        msg: The MOTD was changed
+    

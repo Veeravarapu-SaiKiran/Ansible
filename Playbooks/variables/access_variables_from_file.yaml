@@ -1,0 +1,47 @@
+---
+- 
+  hosts: centos1
+  user: root
+  gather_facts: False
+  vars_files:
+    - external_vars.yaml
+  tasks:
+    - name: test dictionary key value
+      debug:
+        msg: "{{ external_example_key }}"
+    - name: test named external_ dictionary dictionary
+      debug:
+        msg: "{{ external_dict }}"
+    - name: test named external_ dictionary dictionary key value with dot 
+      debug:
+        msg: "{{ external_dict.dict_key }}"
+    - name: test named external_ dictionary dictionary key value with python single braces
+      debug:
+        msg: "{{ external_dict['dict_key'] }}"      
+    - name: test named external_inline dictionary dictionary
+      debug:
+        msg: "{{ external_inline_dict }}"
+    - name: test named external_inline dictionary dictionary key value with dot 
+      debug:
+        msg: "{{ external_inline_dict.inline_dict_key }}"
+    - name: test named external_inline dictionary dictionary key value with python single braces
+      debug:
+        msg: "{{ external_inline_dict['inline_dict_key'] }}"
+    - name: test external_named_list
+      debug:
+        msg: "{{ external_named_list }}"
+    - name: test external_named_list first element with dot
+      debug:
+        msg: "{{ external_named_list.0 }}"
+    - name: test external_named_list first element with python braces
+      debug:
+        msg: "{{ external_named_list[0] }}" 
+    - name: test external_inline_named_list
+      debug:
+        msg: "{{ external_inline_named_list }}"
+    - name: test external_inline_named_list first element with dot
+      debug:
+        msg: "{{ external_inline_named_list.0 }}"
+    - name: test external_inline_named_list first element with python braces
+      debug:
+        msg: "{{ external_inline_named_list[0] }}"
