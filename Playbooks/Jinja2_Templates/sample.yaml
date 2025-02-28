@@ -1,0 +1,53 @@
+---
+- 
+  hosts: all 
+  tasks:
+    - name: Display jinja2 template string with if condition
+      debug:
+        msg: |
+          ### Ansible hostname checking with if condition 
+          {% if ansible_hostname == "ubuntu-c" -%}
+              This is "ubuntu-c"
+          {% endif %}
+    - name: Checking variable is defined or not
+      debug:
+        msg: |
+          ###   Ansible variable defined and checking variable present with if else condition   ###
+          {% set example_variable = 'defined' -%}
+          {% if example_variable is defined -%}
+              example_variable is defined
+          {% elif example_variable is not defined -%}
+              example_variable is not defained
+          {% else -%}
+              No variables defined
+          {% endif %}
+    - name: List the network interfaces by using for statement
+      debug:
+        msg: |
+          {% for i in ansible_interfaces -%}
+             Interface entry {{ loop.index }} = {{ i }}
+          {% endfor %}
+    - name: Ansible jinja2 for with range statement
+      debug:
+        msg: |
+          {% for i in range(1,11) -%}
+             Index  {{ i }}
+          {% endfor %}
+    - name: Ansible jinja2 for with range statement with reverse
+      debug:
+        msg: |
+          {% for i in range(10, 0, -1) -%}
+             {% if i == 5 -%}
+                 {% break %}
+             {% endif %}
+             Index {{ i }}       
+          {% endfor %}
+    - name: Ansible jinja2 for with range statement with reversed(continue if odd)
+      debug:
+        msg: |
+          {% for i in range(10, 0, -1) -%}
+             {% if i is odd -%}
+                 {% continue %}
+             {% endif %}
+             Index {{ i }} 
+          {% endfor %}
