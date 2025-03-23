@@ -796,7 +796,7 @@ Playbook Syntax
 # 4. Better Readability → Makes complex playbooks easier to understand.
 # Advantages of using block:
 ✅ Error Handling (rescue) → If Apache installation fails, an alternative package (Nginx) is installed.
-✅ Ensured Cleanup (always) → Cleanup tasks run even if there’s a failure.
+✅ Ensured Cleanup (always) → Cleanup tasks run even if there’s a failure. Alway will run regardless of success or failure!
 ✅ Better Readability & Maintainability → The tasks are grouped logically.
 
 
@@ -829,3 +829,7 @@ Playbook Syntax
             path: /tmp/install_logs
             state: absent
 
+# Ansible Vault commands
+1. ansible-valut encrypt_string --ask-vault-pass --name 'ansible_become_pass' 'password'
+2. ansible-vault encrypt sample.yaml
+3. ansible-vault decrypt sample.yaml
