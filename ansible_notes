@@ -638,3 +638,50 @@ Playbook Syntax
              until: job_result.finished
            retries: 10     # Retry 10 times
              delay: 30       # Wait 30 seconds between retries
+
+# Parallel, by default fork value is 5 which means at a time 5 target hosts only task will run.
+# each task will run in all the hosts and then move to next task.
+# To change the number of targets to run at a time we should define it in ansible.cfg with fork parameter.
+# [defaults]
+# inventory = hosts
+# host_key_checking = False
+# forks = 10
+
+---
+- 
+  hosts: linux
+  gather_facts: false
+  tasks:
+    - name: Task1
+      command: /bin/sleep 5
+    - name: Task2
+      command: /bin/sleep 5
+    - name: Task3
+      command: /bin/sleep 5
+    - name: Task4
+      command: /bin/sleep 5
+    - name: Task5
+      command: /bin/sleep 5
+    - name: Task6
+      command: /bin/sleep 5
+
+# Serial means batch wise. combining a set of targets to run by specifying serial parameter.
+# Suppose If you have 10 hosts, Ansible will process 2 hosts first, then the next 2, and so on.
+---
+- 
+  hosts: linux
+  gather_facts: false
+  serial: 2
+  tasks:
+    - name: Task1
+      command: /bin/sleep 5
+    - name: Task2
+      command: /bin/sleep 5
+    - name: Task3
+      command: /bin/sleep 5
+    - name: Task4
+      command: /bin/sleep 5
+    - name: Task5
+      command: /bin/sleep 5
+    - name: Task6
+      command: /bin/sleep 5
