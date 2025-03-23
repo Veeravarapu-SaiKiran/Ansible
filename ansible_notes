@@ -402,3 +402,54 @@ Playbook Syntax
     - name: MOTD changed
       debug:
         msg: "MOTD was changed"
+
+
+# Jinja2 templates
+# if else condition
+---
+- 
+  hosts: all
+  tasks:
+    debug:
+      msg: >
+           --== Ansible jinja2 template  ==--
+           {% set example_variable = 'defined' -%}
+           {% if example_variable is defined -%}
+               example_variable is defined
+           {% else -%}
+               example_variable is not defined
+           {% endif %}
+# for loop
+---
+- 
+  hosts: all
+  tasks:
+    debug:
+      msg: >
+           --== Ansible jinja2 template ==--
+           {% for i in ansible_interfaces -%}         
+              Interface entry {{ i.loop}}  = {{ i }}
+           {% endfor %}
+---
+# we have to include jina2_extension parameter in ansible.cfg with jinja2.ext.loopcontrols
+- hosts: all
+  tasks:
+    debug:
+      msg: >
+           --== Ansible jinja2 template ==--
+           {% for i in range(1,11) %}
+              {% if i == 5 -%}
+                {{ i }}
+                {% break %}
+              {% endif %}
+           {% endfor %}
+---
+# Jinja2 template file
+- hosts: all
+  tasks:
+    template:
+      src: template.j2
+      dest: "/tmp/{{ ansible_hostname }}_template.out"
+      trim_blocks: true
+      
+           

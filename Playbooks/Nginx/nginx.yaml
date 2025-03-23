@@ -1,0 +1,13 @@
+---
+- 
+  hosts: centos
+  gather_facts: True
+  gather_subset: 
+    - 'min'
+  tasks:
+    - name: Install epel
+      yum:
+        name: epel-release
+        state: latest
+        update_cache: Yes
+      when: ansible_distribution == "CentOS"
