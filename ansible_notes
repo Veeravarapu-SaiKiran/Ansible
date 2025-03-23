@@ -667,6 +667,7 @@ Playbook Syntax
 
 # Serial means batch wise. combining a set of targets to run by specifying serial parameter.
 # Suppose If you have 10 hosts, Ansible will process 2 hosts first, then the next 2, and so on.
+# Unlike forks, serial applies to a specific play in a playbook.
 ---
 - 
   hosts: linux
@@ -685,3 +686,86 @@ Playbook Syntax
       command: /bin/sleep 5
     - name: Task6
       command: /bin/sleep 5
+
+# Serial with batch wise incremental.
+# Suppose you have 6 hosts now:
+# 1. all tasks will be executed in centos1
+# 2. all tasks will be executed in next 2
+# 1. all tasks will be executed in next 3
+
+---
+- 
+  hosts: linux
+  gather_facts: false
+  serial:
+    - 1
+    - 2
+    - 3
+  tasks:
+    - name: Task1
+      command: /bin/sleep 5
+    - name: Task2
+      command: /bin/sleep 5
+    - name: Task3
+      command: /bin/sleep 5
+    - name: Task4
+      command: /bin/sleep 5
+    - name: Task5
+      command: /bin/sleep 5
+    - name: Task6
+      command: /bin/sleep 5
+---
+- 
+  hosts: linux
+  gather_facts: false
+  serial:
+    - 16%
+    - 34%
+    - 50%
+  tasks:
+    - name: Task1
+      command: /bin/sleep 5
+    - name: Task2
+      command: /bin/sleep 5
+    - name: Task3
+      command: /bin/sleep 5
+    - name: Task4
+      command: /bin/sleep 5
+    - name: Task5
+      command: /bin/sleep 5
+    - name: Task6
+      command: /bin/sleep 5
+
+# Random: Each task sleeps randomly up to 10 secs 
+  hosts: linux
+  gather_facts: false
+  tasks:
+    - name: Task1
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task2
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task3
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task4
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task5
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task6 
+      command: "/bin/sleep {{ 10 | random}}"
+
+# Strategy with random: Runs each task in one or more targets 
+  hosts: linux
+  gather_facts: false
+  tasks:
+    - name: Task1
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task2
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task3
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task4
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task5
+      command: "/bin/sleep {{ 10 | random}}"
+    - name: Task6 
+      command: "/bin/sleep {{ 10 | random}}"
