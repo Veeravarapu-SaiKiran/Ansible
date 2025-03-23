@@ -451,5 +451,55 @@ Playbook Syntax
       src: template.j2
       dest: "/tmp/{{ ansible_hostname }}_template.out"
       trim_blocks: true
-      
+
+# Register and When
+---
+- 
+  hosts: all
+  tasks:
+    - name: regsiter hostnames
+      command: hostname -s
+      register: hostname_output
+    - name: Display hostnames
+      debug:
+        var: hostname_output.stdout
+---
+- hosts: all
+  tasks:
+    - name: register hostnames
+      command: hostname -s
+      when: ( ansible_distribution == "Centos" and ansible_distribution_major_version == "8 ) or
+            ( ansible_distribution == "Ubuntu" and ansible_distrubution_major_version == "7" )
+- hosts: all
+  tasks:
+    - name: register hostnames
+      command: hostname -s
+      when: ( ansible_distribution == "Centos" and ansible_distribution_major_version | int >=8 ) or
+            ( ansible_distribution == "Ubuntu" and ansible_distrubution_major_version | int >= 20 )
+- hosts: all
+  tasks: 
+    - name: register hostnames
+      command: hostname -s
+      when:
+        - ansible_distribution == "CentOS"
+        - ansible_distribution_major_version | int >= 8
+      register: registers_output
+    - name: hostname outputs
+      debug:
+        var: registers_output
+---
+- 
+  hosts: all
+  tasks:
+    - name: run hostname cmd
+      command: hostname -s
+      register: hostnames_output
+      when: ansible_distribution == "CentOS"
+    - name: Install patch
+      yum:
+        name: patch
+        state: present
+      when: hostnames_output.changed
+      # when: hostsname_output is changed
+      # when: hostsname_output is skipped
            
