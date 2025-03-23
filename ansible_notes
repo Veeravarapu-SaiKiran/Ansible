@@ -769,3 +769,19 @@ Playbook Syntax
       command: "/bin/sleep {{ 10 | random}}"
     - name: Task6 
       command: "/bin/sleep {{ 10 | random}}"
+
+# delegate_to is an option in Ansible that allows you to execute a task on a specific host instead of the default target host(s).
+---
+- 
+  - name: Get IP address of server1
+    setup:
+      delegate_to: server1
+      register: server1_facts
+
+  - name: Use the IP address of server1 in server2
+    command: echo "Server1 IP is {{ server1_facts.ansible_default_ipv4.address }}"
+    delegate_to: server2
+
+  - name: Generate SSH Key on Control Node
+    command: ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
+      delegate_to: localhost
