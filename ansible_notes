@@ -785,3 +785,47 @@ Playbook Syntax
   - name: Generate SSH Key on Control Node
     command: ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N ""
       delegate_to: localhost
+
+# Block: A block in Ansible is used to group multiple tasks together under a single structure.
+# It allows better organization, error handling, and conditional execution of related tasks.
+
+# Key Features of block
+# 1. Task Grouping → Helps organize multiple tasks under one structure.
+# 2. Error Handling (rescue) → If any task inside a block fails, we can define steps to handle the failure.
+# 3. Always Execution (always) → Ensures certain tasks always execute, whether the block succeeds or fails.
+# 4. Better Readability → Makes complex playbooks easier to understand.
+# Advantages of using block:
+✅ Error Handling (rescue) → If Apache installation fails, an alternative package (Nginx) is installed.
+✅ Ensured Cleanup (always) → Cleanup tasks run even if there’s a failure.
+✅ Better Readability & Maintainability → The tasks are grouped logically.
+
+
+---
+- name: Install and start Apache with error handling
+  hosts: all
+  tasks:
+    - block:
+        - name: Install Apache
+          yum:
+            name: httpd
+            state: present
+
+        - name: Start Apache service
+          service:
+            name: httpd
+            state: started
+      rescue:
+        - name: Log installation failure
+          debug:
+            msg: "Apache installation failed. Taking corrective action."
+
+        - name: Install an alternative package (Nginx)
+          yum:
+            name: nginx
+            state: present
+      always:
+        - name: Cleanup temp files
+          file:
+            path: /tmp/install_logs
+            state: absent
+
