@@ -577,3 +577,64 @@ Playbook Syntax
         dest: "/home/ansible/sequence_{{ item }}"
         state: directory
       with_sequence: start=0 end=100 stride=10
+
+# Asyncronus, Serial, Parallel
+
+---
+- 
+  hosts:
+  tasks:
+    - name: Test1 Async test with sleep cmd
+      command: /bin/sleep 5
+      when: ansible_distribution == "CentOS"
+      async: 10  # Total time this task runs
+      pool: 1 # run the tasks and then checks the status for every 1 sec
+    - name: Test2 Async test with sleep cmd
+      command: /bin/sleep 5
+      when: ansible_distribution == "Ubuntu"
+      async: 10  # Total time this task runs
+      pool: 1 # run the tasks and then checks the status for every 1 sec. if you mention 0 then it will hit and forget.
+
+---
+- 
+  hosts: all
+  vars:
+    job_ids: []
+  tasks:
+    - name: Task1
+      command: /bin/sleep 5
+      when: ansible_hostname == 'centos1'
+      async: 10
+      pool: 0
+      register: result1
+    - name: Task2
+      command: /bin/sleep 5
+      when: ansible_hostname == 'centos2'
+      async: 10
+      pool: 0
+      register: result2
+    - name: Task3
+      command: /bin/sleep 5
+      when: ansible_hostname == 'centos3'
+      async: 10
+      pool: 0
+      register: result3
+    - name: Capture Job ids
+      set_fact:
+        jobids: >
+                {% if {{ item.ansible_job_id }} is defined -%}
+                    {{ job_ids + [item.ansible_job_id] }}
+                {% else %}
+                    {{ jobids }}
+                {% endif %}
+      with_items: "{{ [result1, result2, result3] }}"
+    - name: Display job ids
+      debug:
+        var: jobids
+    - name: Check the async task status with retries
+      async_status:
+               jid: "{{ long_task.ansible_job_id }}"
+          register: job_result
+             until: job_result.finished
+           retries: 10     # Retry 10 times
+             delay: 30       # Wait 30 seconds between retries
