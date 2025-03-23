@@ -502,4 +502,78 @@ Playbook Syntax
       when: hostnames_output.changed
       # when: hostsname_output is changed
       # when: hostsname_output is skipped
-           
+
+# Looping
+---
+- 
+  hosts:
+  tasks:
+    - name: Configure MOTD msg
+      copy:
+        content: "Welcome to {{ item }} linux \n"
+        dest: /etc/motd
+      notify: MOTD Changed
+      with_items: [ "CentOS", "Ubuntu"]
+      # with_items:
+      #   - CentOS
+      #   - Ubuntu
+      when: ansible_distribution == item
+  handlers:
+    - name: MOTD Changed
+      debug: 
+        msg: MOTD was changed
+---
+- hosts: all
+  tasks:
+    name: Create users
+    user:
+      name: "{{ item }}"
+      state: present # absent for removing
+    with_items:
+      - sai
+      - kiran
+---
+- hosts:
+  tasks:
+    name: Create users with full names
+    user:
+      name: "{{ item.key }}"
+      comment: "{{ item.value.fullname }}"
+      state: present
+    with_dict:
+      sai:
+        fullname: sai_fullname
+      kiran:
+        fullname: kiran_fullname
+---
+- 
+  hosts: all
+  tasks:
+    - name: Create authorized key
+      authorized_key: 
+        user: sai
+        key: {{ item }}
+      with_file:
+        - /home/ansible/.ssh/id_rsa.pub
+---
+- name: Read a remote file
+  hosts: all
+  tasks:
+    - name: Fetch content from a remote file
+      slurp:
+        src: "/etc/remote_config.txt"
+      register: remote_file_content
+
+    - name: Display remote file content
+      debug:
+        msg: "{{ remote_file_content['content'] | b64decode }}"
+
+---
+- name: Create sequence directories
+  hosts: all
+  tasks:
+    - name: Create directories
+      file:
+        dest: "/home/ansible/sequence_{{ item }}"
+        state: directory
+      with_sequence: start=0 end=100 stride=10
