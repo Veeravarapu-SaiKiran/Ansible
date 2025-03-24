@@ -913,3 +913,85 @@ The included file is processed only when the task is executed, not before.
 
 3. Example: Installing multiple packages dynamically.
 
+# Tags
+
+🔹 What are Ansible Tags?
+Tags in Ansible allow you to run specific tasks or groups of tasks in a playbook instead of executing the entire playbook. This helps in optimizing execution time and debugging.
+
+✅ Why Use Tags?
+✔️ Run only specific tasks without executing the whole playbook.
+✔️ Skip unnecessary tasks to save execution time.
+✔️ Re-run failed or changed tasks quickly.
+✔️ Organize playbooks efficiently.
+
+1️⃣ How to Define Tags in Ansible
+You can add a tags parameter to any task or play.
+
+🔹 Example: Assigning Tags to Tasks
+- name: Install and configure web server
+  hosts: all
+  tasks:
+    - name: Install Apache
+      yum:
+        name: httpd
+        state: present
+      tags:
+        - install
+
+    - name: Start Apache service
+      service:
+        name: httpd
+        state: started
+      tags:
+        - start
+
+    - name: Configure Apache
+      template:
+        src: httpd.conf.j2
+        dest: /etc/httpd/conf/httpd.conf
+      tags:
+        - configure
+Here, we have assigned three tags: install, start, and configure.
+
+2️⃣ Running a Playbook with Tags
+To run tasks with a specific tag, use:
+ansible-playbook playbook.yml --tags "install"
+✅ This runs only the install tagged task.
+
+Running Multiple Tags
+ansible-playbook playbook.yml --tags "install,start"
+✅ This runs both install and start tasks.
+
+3️⃣ Skipping Tags
+You can skip specific tasks using --skip-tags:
+ansible-playbook playbook.yml --skip-tags "configure"
+✅ This runs all tasks except configure.
+
+4️⃣ Applying Tags at the Play Level
+You can tag an entire playbook or play.
+- name: Setup Web Server
+  hosts: web
+  tags: webserver
+  tasks:
+    - name: Install Nginx
+      yum:
+        name: nginx
+        state: present
+Now, running:
+ansible-playbook playbook.yml --tags "webserver"
+✅ Executes all tasks inside the play.
+
+5️⃣ Special Tags
+🔹 Example: Using always and never
+- name: Important Task
+  command: echo "This will always run"
+  tags: always
+
+- name: Debug Task
+  debug:
+    msg: "This runs only if explicitly included"
+  tags: never
+always runs even if tags are used.
+
+never runs only when explicitly tagged:
+ansible-playbook playbook.yml --tags "debug"
