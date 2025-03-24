@@ -833,3 +833,83 @@ Playbook Syntax
 1. ansible-valut encrypt_string --ask-vault-pass --name 'ansible_become_pass' 'password'
 2. ansible-vault encrypt sample.yaml
 3. ansible-vault decrypt sample.yaml
+
+1️⃣ import_tasks - Static Inclusion
+🔹 Definition:
+
+import_tasks statically includes tasks at the time of playbook parsing (before execution starts).
+
+This means that all imported tasks are pre-loaded before the playbook runs.
+
+🔹 Key Characteristics:
+✅ Tasks are parsed at the beginning (static inclusion).
+✅ Cannot be used inside a loop (with_items, loop).
+✅ Faster execution because Ansible pre-processes everything.
+✅ Suitable for structured playbooks with reusable task files.
+
+🔹 Example: Using import_tasks
+
+- name: Install and configure web server
+  hosts: all
+  tasks:
+    - import_tasks: install.yml
+    - import_tasks: configure.yml
+
+📌 Here, install.yml and configure.yml are loaded before execution begins.
+
+2️⃣ include_tasks - Dynamic Inclusion
+🔹 Definition:
+
+include_tasks dynamically loads tasks during execution.
+
+The included file is processed only when the task is executed, not before.
+
+🔹 Key Characteristics:
+✅ Tasks are included at runtime (dynamic inclusion).
+✅ Can be used inside loops (loop, with_items).
+✅ More flexible – can be conditionally executed.
+✅ Slower than import_tasks because tasks are loaded dynamically.
+
+🔹 Example: Using include_tasks with Conditions
+- name: Conditionally include tasks
+  hosts: all
+  tasks:
+    - name: Include install tasks only for Ubuntu
+      include_tasks: install.yml
+      when: ansible_os_family == "Debian"
+
+    - name: Include configuration tasks dynamically
+      include_tasks: configure.yml
+
+📌 Here, install.yml runs only for Debian-based systems, and configure.yml is loaded dynamically.
+
+🔹 Example: Using include_tasks with Loops
+- name: Install multiple packages dynamically
+  hosts: all
+  tasks:
+    - name: Include tasks for each package
+      include_tasks: install_package.yml
+      loop:
+        - httpd
+        - nginx
+        - mysql
+
+📌 install_package.yml is called once per package, making it reusable.
+
+✅ When to Use Which?
+✔️ Use import_tasks when:
+
+1. You have fixed task files that don’t need conditions or loops.
+
+2. You want better performance because tasks are pre-parsed.
+
+3. Example: Static role-based task imports.
+
+✔️ Use include_tasks when:
+
+1. You need dynamic execution based on conditions.
+
+2. You need to loop over a set of items.
+
+3. Example: Installing multiple packages dynamically.
+
